@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hangman – Word Guessing Game</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Decorative background (hidden from screen readers) -->
+  <div class="bg-shapes" aria-hidden="true"><span></span><span></span><span></span></div>
+  <div id="particles" class="particles" aria-hidden="true"></div>
+  <div id="confetti" class="confetti" aria-hidden="true"></div>
+
+  <main id="app" class="app">
+    <header class="topbar">
+      <h1 class="title">Hang<span>man</span></h1>
+      <div class="toolbar" role="group" aria-label="Appearance and sound">
+        <button id="themeBtn" class="icon-btn" type="button"></button>
+        <button id="sfxBtn" class="icon-btn" type="button"></button>
+        <button id="musicBtn" class="icon-btn" type="button"></button>
+        <label class="volume">
+          <span class="sr-only">Volume</span>
+          <input id="volume" type="range" min="0" max="1" step="0.05" value="0.6" aria-label="Volume">
+        </label>
+      </div>
+    </header>
+
+    <section class="game">
+      <!-- LEFT: drawing + lives -->
+      <div class="card stage" id="stageCard">
+        <svg id="hangmanSvg" viewBox="0 0 200 240" role="img" aria-label="Hangman drawing">
+          <g class="gallows">
+            <path class="part g" d="M20 225 H140" pathLength="1"/>
+            <path class="part g" d="M50 225 V20" pathLength="1"/>
+            <path class="part g" d="M50 20 H130" pathLength="1"/>
+            <path class="part g" d="M130 20 V40" pathLength="1"/>
+          </g>
+          <g id="man">
+            <!-- Body parts: ONLY these use class "man". data-part is used by the stage system. -->
+            <circle class="part man" data-part="head" cx="130" cy="58" r="18" pathLength="1"/>
+            <path class="part man" data-part="body" d="M130 76 V140" pathLength="1"/>
+            <path class="part man" data-part="larm" d="M130 90 L106 118" pathLength="1"/>
+            <path class="part man" data-part="rarm" d="M130 90 L154 118" pathLength="1"/>
+            <path class="part man" data-part="lleg" d="M130 140 L110 180" pathLength="1"/>
+            <path class="part man" data-part="rleg" d="M130 140 L150 180" pathLength="1"/>
+            <!-- Losing face: NOT a body part, shown only when the player loses -->
+            <path class="part face" d="M119 50 l8 8 m0 -8 l-8 8 M133 50 l8 8 m0 -8 l-8 8 M123 67 q7 -6 14 0" pathLength="1"/>
+          </g>
+        </svg>
+        <div class="lives">
+          <div class="lives-label"><span>Lives</span><strong id="attempts">6 / 6</strong></div>
+          <div class="lives-track" id="livesTrack" role="progressbar" aria-label="Lives remaining" aria-valuemin="0" aria-valuemax="6" aria-valuenow="6">
+            <div id="livesBar" class="lives-bar"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: game panel -->
+      <div class="card panel">
+        <!-- Game stats -->
+        <div class="stats" aria-label="Game statistics">
+          <div class="stat"><span>Score</span><strong id="score">0</strong><div id="floatLayer" class="float-layer" aria-hidden="true"></div></div>
+          <div class="stat"><span>Wins</span><strong id="wins">0</strong></div>
+          <div class="stat"><span>Losses</span><strong id="losses">0</strong></div>
+          <button id="resetStatsBtn" class="btn small danger" type="button">Reset stats</button>
+        </div>
+
+        <!-- Game settings -->
+        <div class="settings">
+          <div class="setting">
+            <label for="difficulty">Difficulty</label>
+            <select id="difficulty">
+              <option value="easy">Easy</option>
+              <option value="medium">Medium</option>
+              <option value="hard">Hard</option>
+            </select>
+            <small id="diffNote"></small>
+          </div>
+          <div class="setting">
+            <label for="category">Category</label>
+            <select id="category"></select>
+            <small>Current word: <strong id="curCategory">–</strong></small>
+          </div>
+          <button id="newGameBtn" class="btn primary" type="button">New Game</button>
+        </div>
+
+        <p id="status" class="status" role="status" aria-live="polite">Pick a letter to begin!</p>
+
+        <div id="wordDisplay" class="word" role="img" aria-label="Hidden word"></div>
+
+        <div class="hint-row">
+          <button id="hintBtn" class="btn ghost" type="button">💡 Hint</button>
+          <small id="hintNote" class="hint-note"></small>
+        </div>
+        <div id="hintBox" class="hint-box" hidden></div>
+
+        <div class="wrong">
+          <span>Wrong letters:</span>
+          <strong id="wrongLetters">–</strong>
+        </div>
+
+        <div id="keyboard" class="keyboard" role="group" aria-label="Letter keyboard"></div>
+      </div>
+    </section>
+
+    <footer class="foot">Tip: use your physical keyboard too. Music file is optional.</footer>
+  </main>
+
+  <!-- Win / Lose dialog -->
+  <div id="overlay" class="overlay" hidden>
+    <div id="result" class="result card" role="dialog" aria-modal="true" aria-labelledby="resultTitle" aria-describedby="resultMsg">
+      <h2 id="resultTitle"></h2>
+      <p id="resultMsg"></p>
+      <div id="resultWord" class="result-word"></div>
+      <dl class="result-details">
+        <div><dt>Round score</dt><dd id="resultPoints">0</dd></div>
+        <div id="rowBonus"><dt>Win bonus</dt><dd id="resultBonus">0</dd></div>
+        <div id="rowLives"><dt>Lives left</dt><dd id="resultLives">0</dd></div>
+      </dl>
+      <button id="playAgainBtn" class="btn primary" type="button">Play Again</button>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
